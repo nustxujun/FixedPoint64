@@ -201,27 +201,14 @@ namespace f64
 
 		constexpr inline fixed64& operator/= (fixed64 val) noexcept
 		{
-#if FIXED_64_ENABLE_OVERFLOW
 			if (val.value == 0)
 			{
-#if FIXED_64_ENABLE_SATURATING
 				if (value > 0)
 					value = MAXIMUM;
 				else
 					value = MINIMUM;
 				return *this;
-#else
-				assert(0 && "overflow");
-#endif
-
 			}
-#else
-			if (val.value == 0)
-			{
-				value = MAXIMUM;
-				return *this;
-			}
-#endif
 
 			internal_type remainder = (value >= 0) ? value : (-value);
 			internal_type divider = (val.value >= 0) ? val.value : (-val.value);
@@ -647,7 +634,7 @@ namespace f64
 				sign = -1;
 
 		}
-		
+
 
 		auto index = abs(x).raw_value() / (Fixed::pi().raw_value() / FIXED_64_TRIG_LUT_COUNT);
 		auto val = Fixed::from_raw(sin_lut<F>::lut_dst[index]);
@@ -714,8 +701,8 @@ namespace f64
 			using Fixed = fixed64<F>;
 			assert(x >= Fixed(0) && x <= Fixed(1));
 
-			constexpr auto fA = Fixed(0.0776509570923569); 
-			constexpr auto fB = Fixed(-0.287434475393028);  
+			constexpr auto fA = Fixed(0.0776509570923569);
+			constexpr auto fB = Fixed(-0.287434475393028);
 			constexpr auto fC = Fixed(0.995181681698119); //    (PI/4 - A - B)
 
 			const auto xx = x * x;
