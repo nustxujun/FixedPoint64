@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="f64::fixed64&lt;*&gt;">
+    <DisplayString> {double(value) / double(FRACTION)} </DisplayString>
+    <Expand>
+      <Item Name="max" ExcludeView="simple">double(MAXIMUM) / double(FRACTION)</Item>
+      <Item Name="epsilon" ExcludeView="simple">double(1) / double(FRACTION)</Item>
+
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
