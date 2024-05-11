@@ -41,6 +41,21 @@
 #define FIXED_64_OVERFLOW_ALERT()
 #endif
 
+#ifndef FIXED_64_ENABLE_INT128_ACCELERATION
+#define FIXED_64_ENABLE_INT128_ACCELERATION 0
+#endif
+
+#if FIXED_64_ENABLE_INT128_ACCELERATION
+#if (FIXED_64_ENABLE_OVERFLOW || FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME || FIXED_64_ENABLE_ROUNDING) 
+#error "switchers are conflicted"
+#endif
+#if defined(_MSC_VER)
+#include <intrin.h>
+#else
+#define FIXED_64_ENABLE_INT128_ACCELERATION 0
+#endif
+#endif
+
 namespace f64
 {
 
@@ -156,6 +171,11 @@ namespace f64
 
 		constexpr inline fixed64& operator*= (fixed64 val) noexcept
 		{
+#if FIXED_64_ENABLE_INT128_ACCELERATION
+			fixed_raw hi;
+			auto lo = _mul128(value, val.value, &hi);
+			value = __shiftright128(lo, hi, FractionBits);
+#else
 			fixed_raw A = value >> 32, C = val.value >> 32;
 			internal_type B = value & 0xFFFFFFFF, D = val.value & 0xFFFFFFFF;
 
@@ -195,6 +215,7 @@ namespace f64
 #else
 			value = (product_hi << (64 - FractionBits)) | (product_lo >> FractionBits);
 #endif
+#endif
 			return *this;
 		}
 
@@ -205,6 +226,12 @@ namespace f64
 
 		constexpr inline fixed64& operator/= (fixed64 val) noexcept
 		{
+#if FIXED_64_ENABLE_INT128_ACCELERATION
+			fixed_raw hi, lo;
+			lo = _mul128(value, FRACTION, &hi);
+			fixed_raw remainder;
+			value = _div128(hi, lo, val.value, &remainder);
+#else
 			if (val.value == 0)
 			{
 				if (value > 0)
@@ -278,6 +305,7 @@ namespace f64
 			}
 
 			value = result;
+#endif
 			return *this;
 		}
 
