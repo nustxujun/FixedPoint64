@@ -7,15 +7,11 @@
 #include <ios>
 
 #ifndef FIXED_64_ENABLE_ROUNDING
-#define FIXED_64_ENABLE_ROUNDING 1
+#define FIXED_64_ENABLE_ROUNDING 0
 #endif
 
 #ifndef FIXED_64_ENABLE_OVERFLOW
 #define FIXED_64_ENABLE_OVERFLOW 1
-#endif
-
-#ifndef FIXED_64_ENABLE_SATURATING // need FIXED_64_ENABLE_OVERFLOW
-#define FIXED_64_ENABLE_SATURATING 0
 #endif
 
 #ifndef FIXED_64_ENABLE_TRIG_LUT
@@ -29,6 +25,20 @@
 
 #ifndef FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME
 #define FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME 0
+#endif
+
+#ifndef FIXED_64_ENABLE_SATURATING
+#define FIXED_64_ENABLE_SATURATING 1
+#endif
+
+#ifndef FIXED_64_ASSERT
+#define FIXED_64_ASSERT(x) assert(x)
+#endif
+
+#if !FIXED_64_ENABLE_SATURATING
+#define FIXED_64_OVERFLOW_ALERT() FIXED_64_ASSERT(false && "overflow!");
+#else
+#define FIXED_64_OVERFLOW_ALERT()
 #endif
 
 namespace f64
@@ -120,11 +130,8 @@ namespace f64
 
 			if (!((v1 ^ v2) & SIGN_MASK) && ((v1 ^ sum) & SIGN_MASK))
 			{
-#if FIXED_64_ENABLE_SATURATING 
+				FIXED_64_OVERFLOW_ALERT();
 				value = (val.value >= 0) ? MAXIMUM : MINIMUM;
-#else
-				assert(0 && "overflow");
-#endif
 			}
 #else
 			value += val.value;
@@ -164,16 +171,13 @@ namespace f64
 #if FIXED_64_ENABLE_OVERFLOW 
 			if ((product_hi >> 63) != (product_hi >> (FractionBits - 1)))
 			{
-#if FIXED_64_ENABLE_SATURATING
-				if ( ((value ^ val.value) & SIGN_MASK) == 0)
+				FIXED_64_OVERFLOW_ALERT();
+				if (((value ^ val.value) & SIGN_MASK) == 0)
 					value = MAXIMUM;
 				else
 					value = MINIMUM;
 
 				return *this;
-#else
-				assert(0 && "overflow");
-#endif
 			}
 #endif
 
@@ -238,16 +242,14 @@ namespace f64
 #if FIXED_64_ENABLE_OVERFLOW
 				if (div & ~((~fixed_raw(0)) >> bit_pos))
 				{
-#if FIXED_64_ENABLE_SATURATING
+					FIXED_64_OVERFLOW_ALERT();
+
 					if (((value ^ val.value) & SIGN_MASK) == 0)
 						value = MAXIMUM;
 					else
 						value = MINIMUM;
 
 					return *this;
-#else
-					assert(0 && "overflow");
-#endif
 				}
 #endif
 
@@ -267,12 +269,9 @@ namespace f64
 #if FIXED_64_ENABLE_OVERFLOW
 				if (result == SIGN_MASK)
 				{
-#if FIXED_64_ENABLE_SATURATING
+					FIXED_64_OVERFLOW_ALERT();
 					value = MINIMUM;
 					return *this;
-#else
-					assert(0 && "overflow");
-#endif
 				}
 #endif
 				result = -result;
@@ -401,7 +400,7 @@ namespace f64
 	template<unsigned int F>
 	constexpr inline fixed64<F> fmod(fixed64<F> a, fixed64<F> b) noexcept
 	{
-		assert(b.raw_value() != 0);
+		FIXED_64_ASSERT(b.raw_value() != 0);
 		return fixed64<F>::from_raw(a.raw_value() % b.raw_value());
 	}
 
@@ -412,7 +411,7 @@ namespace f64
 		using Fixed = fixed64<F>;
 
 		if (base == Fixed(0)) {
-			assert(exp > 0);
+			FIXED_64_ASSERT(exp > 0);
 			return Fixed(0);
 		}
 
@@ -450,7 +449,7 @@ namespace f64
 		using Fixed = fixed64<F>;
 
 		if (base == Fixed(0)) {
-			assert(exp > Fixed(0));
+			FIXED_64_ASSERT(exp > Fixed(0));
 			return Fixed(0);
 		}
 
@@ -465,7 +464,7 @@ namespace f64
 			return pow(base, exp.raw_value() / FRAC);
 		}
 
-		assert(base > Fixed(0));
+		FIXED_64_ASSERT(base > Fixed(0));
 		return exp2(log2(base) * exp);
 	}
 
@@ -480,7 +479,7 @@ namespace f64
 		constexpr auto FRAC = Fixed::FRACTION;
 		auto x_int = x.raw_value() / FRAC;
 		x -= x_int;
-		assert(x >= Fixed(0) && x < Fixed(1));
+		FIXED_64_ASSERT(x >= Fixed(0) && x < Fixed(1));
 
 		constexpr Fixed fA = Fixed(1.3903728105644451e-2); // 
 		constexpr Fixed fB = Fixed(3.4800571158543038e-2); // 
@@ -503,7 +502,7 @@ namespace f64
 		constexpr auto FRAC = Fixed::FRACTION;
 		const auto x_int = x.raw_value() / FRAC;
 		x -= x_int;
-		assert(x >= Fixed(0) && x < Fixed(1));
+		FIXED_64_ASSERT(x >= Fixed(0) && x < Fixed(1));
 
 		constexpr auto fA = Fixed(1.8964611454333148e-3);
 		constexpr auto fB = Fixed(8.9428289841091295e-3);
@@ -518,7 +517,7 @@ namespace f64
 	constexpr inline fixed64<F> log2(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
-		assert(x > Fixed(0));
+		FIXED_64_ASSERT(x > Fixed(0));
 
 		// Normalize input to the [1:2] domain
 		auto value = x.raw_value();
@@ -530,7 +529,7 @@ namespace f64
 			value <<= (F - highest);
 		}
 		x = Fixed::from_raw(value);
-		assert(x >= Fixed(1) && x < Fixed(2));
+		FIXED_64_ASSERT(x >= Fixed(1) && x < Fixed(2));
 
 		constexpr auto fA = Fixed(4.4873610194131727e-2);
 		constexpr auto fB = Fixed(-4.1656368651734915e-1);
@@ -562,7 +561,7 @@ namespace f64
 		/*
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
 		*/
-		assert(("sqrt input should be non-negative", v >= 0));
+		FIXED_64_ASSERT(("sqrt input should be non-negative", v >= 0));
 
 		using Fixed = fixed64<F>;
 
@@ -637,6 +636,7 @@ namespace f64
 
 
 		auto index = abs(x).raw_value() / (Fixed::pi().raw_value() / FIXED_64_TRIG_LUT_COUNT);
+		//auto val = Fixed(fixed64<62>::from_raw(sin_lut[index]));
 		auto val = Fixed::from_raw(sin_lut<F>::lut_dst[index]);
 
 
@@ -687,7 +687,7 @@ namespace f64
 	{
 		auto cx = cos(x);
 
-		assert(abs(cx).raw_value() > 1);
+		FIXED_64_ASSERT(abs(cx).raw_value() > 1);
 
 		return sin(x) / cx;
 	}
@@ -699,7 +699,7 @@ namespace f64
 		constexpr inline fixed64<F> atan_sanitized(fixed64<F> x)
 		{
 			using Fixed = fixed64<F>;
-			assert(x >= Fixed(0) && x <= Fixed(1));
+			FIXED_64_ASSERT(x >= Fixed(0) && x <= Fixed(1));
 
 			constexpr auto fA = Fixed(0.0776509570923569);
 			constexpr auto fB = Fixed(-0.287434475393028);
@@ -712,7 +712,7 @@ namespace f64
 		constexpr inline fixed64<F> atan_div(fixed64<F> y, fixed64<F> x) noexcept
 		{
 			using Fixed = fixed64<F>;
-			assert(x != Fixed(0));
+			FIXED_64_ASSERT(x != Fixed(0));
 
 			if (y < Fixed(0)) {
 				if (x < Fixed(0)) {
@@ -723,8 +723,8 @@ namespace f64
 			if (x < Fixed(0)) {
 				return -atan_div(y, -x);
 			}
-			assert(y >= Fixed(0));
-			assert(x > Fixed(0));
+			FIXED_64_ASSERT(y >= Fixed(0));
+			FIXED_64_ASSERT(x > Fixed(0));
 
 			if (y > x) {
 				return Fixed::half_pi() - internal::atan_sanitized(x / y);
@@ -757,7 +757,7 @@ namespace f64
 		using Fixed = fixed64<F>;
 		if (x == Fixed(0))
 		{
-			assert(y != Fixed(0));
+			FIXED_64_ASSERT(y != Fixed(0));
 			return (y > Fixed(0)) ? Fixed::half_pi() : -Fixed::half_pi();
 		}
 
@@ -775,7 +775,7 @@ namespace f64
 	constexpr inline fixed64<F> asin(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
-		assert(x >= Fixed(-1) && x <= Fixed(+1));
+		FIXED_64_ASSERT(x >= Fixed(-1) && x <= Fixed(+1));
 
 		const auto yy = Fixed(1) - x * x;
 		if (yy == Fixed(0))
@@ -789,7 +789,7 @@ namespace f64
 	constexpr inline fixed64<F> acos(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
-		assert(x >= Fixed(-1) && x <= Fixed(+1));
+		FIXED_64_ASSERT(x >= Fixed(-1) && x <= Fixed(+1));
 
 		if (x == Fixed(-1))
 		{
