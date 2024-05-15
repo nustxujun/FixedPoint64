@@ -16,7 +16,7 @@ using namespace f64;
 using fixed = fixed64<FRACTION_BITS>;
 
 
-const auto max_error = std::numeric_limits<fixed>::epsilon() * 2 ;
+const auto max_error = std::numeric_limits<fixed>::epsilon() * 2;
 
 #define TEST_CMP_OPT(A,B, OP) {assert( (A OP B) == (fixed(A) OP fixed(B)) );}
 
@@ -25,12 +25,15 @@ const auto max_error = std::numeric_limits<fixed>::epsilon() * 2 ;
 #define TEST_MATH_FUNC_1(A, FUNC, ERR) {double r1 = FUNC(A); auto r2 = FUNC(fixed(A));printf("---\n%s(a)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); assert( abs(r1 - r2) <= ERR );}
 #define TEST_MATH_FUNC_2(a,b, FUNC, ERR) {double r1 = FUNC(a,b); auto r2 = FUNC(fixed(a), fixed(b));printf("---\n%s(a,b)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); assert( abs(r1 - r2) <= ERR );}
 
+#ifdef FIXED_64_ENABLE_INT128_ACCELERATION
+#define TEST_CONSTEXPR(FUNC, ...)
+#else
 #define TEST_CONSTEXPR(FUNC, ...) {constexpr auto r = FUNC(__VA_ARGS__ );}
-
-auto test_func = []{
+#endif
+auto test_func = [] {
 
 	std::default_random_engine e;
-	e.seed((unsigned int)& e);
+	e.seed((unsigned int)&e);
 
 	constexpr auto max = sqrt(std::numeric_limits<fixed>::max());
 	std::uniform_real_distribution<double> u(-double(max), double(max));
@@ -76,7 +79,7 @@ auto test_func = []{
 	constexpr fixed c_a = 1;
 	constexpr fixed c_b = 0.02;
 
-	TEST_CONSTEXPR(ceil,c_a);
+	TEST_CONSTEXPR(ceil, c_a);
 	TEST_CONSTEXPR(floor, c_a);
 	TEST_CONSTEXPR(round, c_a);
 	TEST_CONSTEXPR(abs, c_a);
@@ -118,13 +121,16 @@ auto test_func = []{
 
 	}
 
-	std::cout << "test sin\navg err:" << err / count << ", max err: " << merr << std::endl;
+	std::cout << "\ntest sin\navg err:" << err / count << ", max err: " << merr << std::endl;
 
 
 };
 
 
-auto test = []{
+auto test = [] {
+	printf("==== test begin ====\n");
+
+
 	for (int i = 0; i < TEST_COUNT; ++i)
 	{
 		test_func();
