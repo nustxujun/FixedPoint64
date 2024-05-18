@@ -49,12 +49,15 @@ fixed64 is designed to find a balance between percision and performance. It is s
 Intel Core i9-12900K 3.2GHz
 - forceinline 
 - no overflow 
+- no hardware int128
 
 |Arithmetic|Fixed64|Hardware Float|
 |-|:-:|:-:|
 |Addition/Subtraction|0.027 ns|0.433 ns|
 |Multiplication|2.621 ns|0.837 ns|
 |Division|1.316 ns|2.784 ns|
+
+see more in ``benchmark.cpp``
 ### Supported Switcher
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // apply rounding 
@@ -79,7 +82,7 @@ Intel Core i9-12900K 3.2GHz
 - 可变小数位精度
 - 越界保护/警告
 - 支持四舍五入和越界限制
-- 支持大部分函数的编译其计算（c++20全部支持）
+- 支持大部分函数的编译期计算（c++20全部支持）
 
 ## 快速上手
 ```c++
@@ -118,14 +121,17 @@ fixed64综合考虑了精度与性能的问题，使用了int64存储。个人�
 
 ### Performance
 Intel Core i9-12900K 3.2GHz
-- forceinline 
-- no overflow 
+- 开启强制内敛 
+- 无溢出检测
+- 无硬件int128支持
 
-|Arithmetic|Fixed64|Hardware Float|
+|算数操作|定点数|系统浮点数|
 |-|:-:|:-:|
-|Addition/Subtraction|0.027 ns|0.433 ns|
-|Multiplication|2.621 ns|0.837 ns|
-|Division|1.316 ns|2.784 ns|
+|加/减|0.027 ns|0.433 ns|
+|乘|2.621 ns|0.837 ns|
+|除|1.316 ns|2.784 ns|
+
+具体请参考``benchmark.cpp``
 ### 开关
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // 使用四舍五入
