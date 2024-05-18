@@ -1,7 +1,7 @@
 
 [中文](#64位定点数)
 # fixed64
-Single-header modern C++ fixed-point arithmetic library. 
+Cross-platform single-header modern C++ fixed-point arithmetic library. 
 
 requires c++11, recommands c++20
 ## Features
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 fixed64 is designed to find a balance between percision and performance. It is stored by int64. The target application scenario is physics engine，which has many distance calculation that cause the overflow on 32-bits fixed-point.
 
 ## Contents
-## File
+### File
 - fixed64.hpp fixed-point header
 - trig_lut.hpp lut for sin, optional
 ### Supported Functions
@@ -40,6 +40,21 @@ fixed64 is designed to find a balance between percision and performance. It is s
 - Other: abs ceil floor round
 ```
 
+### Optimization
+- support hardware int128 (MSVC only)
+- support look-up table for trigonometric function
+- support speed up the multiplication and division with integer
+
+### Performance
+Intel Core i9-12900K 3.2GHz
+- forceinline 
+- no overflow 
+
+|Arithmetic|Fixed64|Hardware Float|
+|-|:-:|:-:|
+|Addition/Subtraction|0.027 ns|0.433 ns|
+|Multiplication|2.621 ns|0.837 ns|
+|Division|1.316 ns|2.784 ns|
 ### Supported Switcher
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // apply rounding 
@@ -47,6 +62,7 @@ fixed64 is designed to find a balance between percision and performance. It is s
 #define FIXED_64_ENABLE_SATURATING // saturate result
 #define FIXED_64_ENABLE_TRIG_LUT // use lut for trigonometric function
 #define FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME //make all function be with constexpr, clz will use soft implemention
+#define FIXED_64_ENABLE_FORCEINLINE // enable forceinline
 ```
 ## Compare with other fixed-point arithmetic libraries
 - **[fpm](https://github.com/MikeLankamp/fpm)** good coding style,but has no overflow protection/alert, need to provide int128 as intermediate type by yourself
@@ -95,6 +111,21 @@ fixed64综合考虑了精度与性能的问题，使用了int64存储。个人�
 - 其他函数: abs ceil floor round
 ```
 
+### 优化
+- 支持硬件int128加速计算（暂时只支持MSVC）
+- 支持三角函数查表
+- 支持与整型的乘除法加速
+
+### Performance
+Intel Core i9-12900K 3.2GHz
+- forceinline 
+- no overflow 
+
+|Arithmetic|Fixed64|Hardware Float|
+|-|:-:|:-:|
+|Addition/Subtraction|0.027 ns|0.433 ns|
+|Multiplication|2.621 ns|0.837 ns|
+|Division|1.316 ns|2.784 ns|
 ### 开关
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // 使用四舍五入
@@ -102,6 +133,8 @@ fixed64综合考虑了精度与性能的问题，使用了int64存储。个人�
 #define FIXED_64_ENABLE_SATURATING // 使用越界限制
 #define FIXED_64_ENABLE_TRIG_LUT // 三角函数使用查表方法
 #define FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME //强制使函数支持编译期运算，主要是改变clz的实现
+#define FIXED_64_ENABLE_FORCEINLINE // 开启强制内联
+
 ```
 
 

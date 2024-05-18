@@ -1,5 +1,7 @@
 #define FIXED_64_ENABLE_OVERFLOW 0
 #define FIXED_64_ENABLE_INT128_ACCELERATION 0
+#define FIXED_64_ENABLE_TRIG_LUT 1
+#define FIXED_64_ENABLE_FORCEINLINE 1
 #include "fixed64.h"
 #include <math.h>
 #include <assert.h>
@@ -137,19 +139,38 @@ struct TestGroup
 auto benchmark = [](){
 	printf("==== benchmark begin ====\n");
 
+	printf("enable overflow: %d\n", FIXED_64_ENABLE_OVERFLOW);
+	printf("enable int128: %d\n", FIXED_64_ENABLE_INT128_ACCELERATION);
+	printf("enable forceinline: %d\n", FIXED_64_ENABLE_FORCEINLINE);
+
+	printf("\n\n");
+
+
 	const uint64_t count1 = 0xffff'f;
 	const uint64_t count2 = 0xffff'f;
 
 	RUN_BASIC_TEST_GROUP("add/sub", +, -, 0xff, count1, -100, 100);
 
+#if FIXED_64_ENABLE_INT128_ACCELERATION
+	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 0, 0.5);
+	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 0.5, 1);
+	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 1, 2);
+	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 2, 100);
+#else
+	RUN_BASIC_TEST_GROUP("mul", *, * , 0xff, count2, -100,100);
+
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 0, 0.5);
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 0.5, 1);
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 1, 2);
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 2, 100);
-	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0, 0.5);
+	
+	RUN_BASIC_TEST_GROUP("div", /, / , 0xff, count2, -100, 100);
+    
+    RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0, 0.5);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0.5, 1);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 1, 2);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 2, 100);
+#endif
 
 	const uint64_t count3 = 0xffff'f;
 	using namespace f64;

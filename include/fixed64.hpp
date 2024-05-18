@@ -56,6 +56,20 @@
 #endif
 #endif
 
+#ifndef FIXED_64_ENABLE_FORCEINLINE
+#define FIXED_64_ENABLE_FORCEINLINE 0
+#endif
+
+#if FIXED_64_ENABLE_FORCEINLINE
+#if defined(_MSC_VER)
+#define FIXED_64_FORCEINLINE __forceinline
+#else
+#define FIXED_64_FORCEINLINE inline __attribute__ ((always_inline))	
+#endif
+#else
+#define FIXED_64_FORCEINLINE inline
+#endif
+
 namespace f64
 {
 
@@ -75,28 +89,28 @@ namespace f64
 		static constexpr fixed_raw MAXIMUM = 0x7FFF'FFFF'FFFF'FFFF;
 		static constexpr fixed_raw MINIMUM = -MAXIMUM;
 	public:
-		constexpr inline fixed64() noexcept = default;
+		constexpr FIXED_64_FORCEINLINE fixed64() noexcept = default;
 
 
-		constexpr inline fixed64(const fixed64& val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64(const fixed64& val) noexcept
 			:value(val.value)
 		{
 		}
 
 		template<unsigned int F>
-		constexpr inline fixed64(fixed64<F> val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64(fixed64<F> val) noexcept
 			:value(from_fixed<F>(val).raw_value())
 		{
 		}
 
 		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-		constexpr inline  fixed64(T val) noexcept
+		constexpr FIXED_64_FORCEINLINE  fixed64(T val) noexcept
 			: value(static_cast<fixed_raw>(val)* FRACTION)
 		{
 		}
 
 		template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-		constexpr inline  fixed64(T val) noexcept :
+		constexpr FIXED_64_FORCEINLINE  fixed64(T val) noexcept :
 #if FIXED_64_ENABLE_ROUNDING
 			value(static_cast<fixed_raw>(val* FRACTION + (val * FRACTION >= 0 ? 0.5f : -0.5f)))
 #else
@@ -107,36 +121,36 @@ namespace f64
 		}
 
 		template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-		constexpr inline explicit operator T() const noexcept
+		constexpr FIXED_64_FORCEINLINE explicit operator T() const noexcept
 		{
 			return static_cast<T>(value) / static_cast<T>(FRACTION);
 		}
 
 		// Explicit conversion to an integral type
 		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-		constexpr inline explicit operator T() const noexcept
+		constexpr FIXED_64_FORCEINLINE explicit operator T() const noexcept
 		{
 			return static_cast<T>(value / FRACTION);
 		}
 
-		constexpr inline fixed_raw raw_value()const noexcept
+		constexpr FIXED_64_FORCEINLINE fixed_raw raw_value()const noexcept
 		{
 			return value;
 		}
 
-		static constexpr inline fixed64 from_raw(fixed_raw val) noexcept
+		static constexpr FIXED_64_FORCEINLINE fixed64 from_raw(fixed_raw val) noexcept
 		{
 			fixed64 ret;
 			ret.value = val;
 			return ret;
 		}
 
-		constexpr inline fixed64 operator-() const noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64 operator-() const noexcept
 		{
 			return from_raw(-value);
 		}
 
-		constexpr inline fixed64& operator+=(fixed64 val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64& operator+=(fixed64 val) noexcept
 		{
 #if FIXED_64_ENABLE_OVERFLOW
 			internal_type v1 = value, v2 = val.value;
@@ -154,22 +168,22 @@ namespace f64
 			return *this;
 		}
 
-		constexpr inline fixed64& operator-=(fixed64 val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64& operator-=(fixed64 val) noexcept
 		{
 			return *this += (-val);
 		}
 
-		friend constexpr inline fixed64 operator+ (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator+ (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1 += v2;
 		}
 
-		friend constexpr inline fixed64 operator- (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator- (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1 -= v2;
 		}
 
-		constexpr inline fixed64& operator*= (fixed64 val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64& operator*= (fixed64 val) noexcept
 		{
 #if FIXED_64_ENABLE_INT128_ACCELERATION
 			fixed_raw hi;
@@ -219,12 +233,12 @@ namespace f64
 			return *this;
 		}
 
-		friend constexpr inline fixed64 operator* (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator* (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1 *= v2;
 		}
 
-		constexpr inline fixed64& operator/= (fixed64 val) noexcept
+		constexpr FIXED_64_FORCEINLINE fixed64& operator/= (fixed64 val) noexcept
 		{
 #if FIXED_64_ENABLE_INT128_ACCELERATION
 			fixed_raw hi, lo;
@@ -309,42 +323,76 @@ namespace f64
 			return *this;
 		}
 
-		friend constexpr inline fixed64 operator/ (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator/ (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1 /= v2;
 		}
 
-		friend constexpr inline bool operator< (fixed64 v1, fixed64 v2) noexcept
+#if !FIXED_64_ENABLE_OVERFLOW 
+		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+		constexpr FIXED_64_FORCEINLINE fixed64& operator*= (T val)
+		{
+			value *= val;
+			return *this;
+		}
+
+		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator* (fixed64 v1, T v2) noexcept
+		{
+			return v1 *= v2;
+		}
+
+		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator* (T v1, fixed64 v2) noexcept
+		{
+			return v2 *= v1;
+		}
+
+		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+		constexpr FIXED_64_FORCEINLINE fixed64& operator/= (T val)
+		{
+			value /= val;
+			return *this;
+		}
+
+		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+		friend constexpr FIXED_64_FORCEINLINE fixed64 operator/ (fixed64 v1, T v2) noexcept
+		{
+			return v1 /= v2;
+		}
+#endif
+
+		friend constexpr FIXED_64_FORCEINLINE bool operator< (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() < v2.raw_value();
 		}
 
-		friend constexpr inline bool operator<= (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE bool operator<= (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() <= v2.raw_value();
 		}
 
-		friend constexpr inline bool operator== (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE bool operator== (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() == v2.raw_value();
 		}
 
-		friend constexpr inline bool operator!= (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE bool operator!= (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() != v2.raw_value();
 		}
 
-		friend constexpr inline bool operator>= (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE bool operator>= (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() >= v2.raw_value();
 		}
 
-		friend constexpr inline bool operator> (fixed64 v1, fixed64 v2) noexcept
+		friend constexpr FIXED_64_FORCEINLINE bool operator> (fixed64 v1, fixed64 v2) noexcept
 		{
 			return v1.raw_value() > v2.raw_value();
 		}
 
-		static constexpr inline long clz(internal_type value) noexcept
+		static constexpr FIXED_64_FORCEINLINE long clz(internal_type value) noexcept
 		{
 #if __cplusplus >= 202002L // c++20, MSVC requires /Zc:__cplusplus
 			return std::countl_zero(value);
@@ -365,20 +413,20 @@ namespace f64
 		}
 
 
-		static constexpr inline fixed64 e() { return fixed64(fixed64<61>::from_raw(6267931151224907085ll)); }
-		static constexpr inline fixed64 pi() { return fixed64(fixed64<61>::from_raw(7244019458077122842ll)); }
-		static constexpr fixed64 half_pi() { return fixed64(fixed64<62>::from_raw(7244019458077122842ll)); }
-		static constexpr inline fixed64 two_pi() { return fixed64(fixed64<60>::from_raw(7244019458077122842ll)); }
+		static constexpr FIXED_64_FORCEINLINE fixed64 e() { return fixed64(fixed64<61>::from_raw(6267931151224907085ll)); }
+		static constexpr FIXED_64_FORCEINLINE fixed64 pi() { return fixed64(fixed64<61>::from_raw(7244019458077122842ll)); }
+		static constexpr FIXED_64_FORCEINLINE fixed64 half_pi() { return fixed64(fixed64<62>::from_raw(7244019458077122842ll)); }
+		static constexpr FIXED_64_FORCEINLINE fixed64 two_pi() { return fixed64(fixed64<60>::from_raw(7244019458077122842ll)); }
 	public:
 
 		template<unsigned int F, typename std::enable_if<(FractionBits > F)>::type* = nullptr>
-			static constexpr inline fixed64<F> from_fixed(fixed64<F> val)noexcept
+			static constexpr FIXED_64_FORCEINLINE fixed64<F> from_fixed(fixed64<F> val)noexcept
 		{
 			return fixed64<F>::from_raw(val.raw_value() * (fixed_raw(1) << (FractionBits - F)));
 		}
 
 		template<unsigned int F, typename std::enable_if<(FractionBits <= F)>::type* = nullptr>
-		static constexpr inline fixed64<F> from_fixed(fixed64<F> val)noexcept
+		static constexpr FIXED_64_FORCEINLINE fixed64<F> from_fixed(fixed64<F> val)noexcept
 		{
 			return fixed64<F>::from_raw(val.raw_value() / (fixed_raw(1) << (F - FractionBits)));
 		}
