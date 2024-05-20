@@ -1,7 +1,7 @@
 #define FIXED_64_ENABLE_TRIG_LUT 1
 #define FIXED_64_ENABLE_SATURATING 1
 
-#include "fixed64.h"
+#include "fixed64.hpp"
 #include <math.h>
 #include <assert.h>
 #include <algorithm>
@@ -18,12 +18,22 @@ using fixed = fixed64<FRACTION_BITS>;
 
 const auto max_error = std::numeric_limits<fixed>::epsilon() * 2;
 
-#define TEST_CMP_OPT(A,B, OP) {assert( (A OP B) == (fixed(A) OP fixed(B)) );}
 
-#define TEST_MATH_OPT(a,b, OP,ERR) { double r1 = (a OP b); auto r2 = (fixed(a) OP fixed(b));printf("---\n%s\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #a#OP#b,r1,(double)r2,(double)abs(r1 - r2)); assert( abs(r1 - r2) <= ERR );}
+void report(bool expr)
+{
+	if (!expr)
+	{
+		throw 1;
+	}
+}
 
-#define TEST_MATH_FUNC_1(A, FUNC, ERR) {double r1 = FUNC(A); auto r2 = FUNC(fixed(A));printf("---\n%s(a)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); assert( abs(r1 - r2) <= ERR );}
-#define TEST_MATH_FUNC_2(a,b, FUNC, ERR) {double r1 = FUNC(a,b); auto r2 = FUNC(fixed(a), fixed(b));printf("---\n%s(a,b)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); assert( abs(r1 - r2) <= ERR );}
+
+#define TEST_CMP_OPT(A,B, OP) {report( (A OP B) == (fixed(A) OP fixed(B)) );}
+
+#define TEST_MATH_OPT(a,b, OP,ERR) { double r1 = (a OP b); auto r2 = (fixed(a) OP fixed(b));printf("---\n%s\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #a#OP#b,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
+
+#define TEST_MATH_FUNC_1(A, FUNC, ERR) {double r1 = FUNC(A); auto r2 = FUNC(fixed(A));printf("---\n%s(a)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
+#define TEST_MATH_FUNC_2(a,b, FUNC, ERR) {double r1 = FUNC(a,b); auto r2 = FUNC(fixed(a), fixed(b));printf("---\n%s(a,b)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
 
 #ifdef FIXED_64_ENABLE_INT128_ACCELERATION
 #define TEST_CONSTEXPR(FUNC, ...)

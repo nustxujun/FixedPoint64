@@ -55,6 +55,16 @@ long long totals[2] = {0,0};
 double prevent_optimized_float = 0;
 fixed prevent_optimized_fixed = 0;
 
+FIXED_64_FORCEINLINE void PreventOptimizedAway(double val)
+{
+	prevent_optimized_float += val;
+}
+
+FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
+{
+	prevent_optimized_fixed += val;
+}
+
 #define TEST_LOOP(EXPR1, EXPR2, COUNT) \
 	for (uint64_t i = 0; i < COUNT; i += 0xf){\
 		EXPR1;\
@@ -121,7 +131,7 @@ struct TestGroup
 	TestGroup g(NAME, NUM, COUNT, Min, Max);\
 	for (uint64_t i = 0; i < NUM; ++i)\
 	{\
-		RUN_TEST(a OP1= b, a OP2= b,COUNT,Min,Max)\
+		RUN_TEST(a OP1##= b, a OP2##= b,COUNT,Min,Max)\
 	}\
 }
 
@@ -130,7 +140,7 @@ struct TestGroup
 	TestGroup g(NAME, NUM, COUNT, Min, Max);\
 	for (uint64_t i = 0; i < NUM; ++i)\
 	{\
-		RUN_TEST(a = METHOD, a = METHOD,COUNT,Min,Max)\
+		RUN_TEST(PreventOptimizedAway(METHOD), PreventOptimizedAway(METHOD),COUNT,Min,Max)\
 	}\
 }
 
@@ -146,7 +156,7 @@ auto benchmark = [](){
 	printf("\n\n");
 
 
-	const uint64_t count1 = 0xffff'f;
+	const uint64_t count1 = 0xffff'ff;
 	const uint64_t count2 = 0xffff'f;
 
 	RUN_BASIC_TEST_GROUP("add/sub", +, -, 0xff, count1, -100, 100);
@@ -163,10 +173,10 @@ auto benchmark = [](){
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 0.5, 1);
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 1, 2);
 	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 2, 100);
-	
-	RUN_BASIC_TEST_GROUP("div", /, / , 0xff, count2, -100, 100);
-    
-    RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0, 0.5);
+
+    RUN_BASIC_TEST_GROUP("div", /, / , 0xff, count2, -100, 100);
+
+	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0, 0.5);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0.5, 1);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 1, 2);
 	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 2, 100);

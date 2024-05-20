@@ -20028,6 +20028,10 @@ namespace f64
 
 	};
 
+	template<unsigned int F>
+	constexpr std::array<int64_t, 10001> sin_lut<F>::lut_src;
+	template<unsigned int F>
+	constexpr std::array<int64_t, 10001> sin_lut<F>::lut_dst;
 }
 
 #endif
