@@ -2,7 +2,7 @@
 #define FIXED_64_ENABLE_INT128_ACCELERATION 0
 #define FIXED_64_ENABLE_TRIG_LUT 1
 #define FIXED_64_ENABLE_FORCEINLINE 1
-#include "fixed64.h"
+#include "fixed64.hpp"
 #include <math.h>
 #include <assert.h>
 #include <algorithm>
