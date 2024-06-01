@@ -5,10 +5,10 @@
 #include <array>
 #include <assert.h>
 #include <ios>
+#include <bit> // for clz
 
 #if __cplusplus >= 202002L // c++20, MSVC requires /Zc:__cplusplus
 #define FIXED_64_ENABLE_CPP20 1
-#include <bit> // for clz
 #else
 #define FIXED_64_ENABLE_CPP20 0
 #endif
@@ -147,7 +147,7 @@ namespace f64
 
 		static constexpr FIXED_64_FORCEINLINE fixed64 from_raw(fixed_raw val) noexcept
 		{
-			fixed64 ret;
+			fixed64 ret{};
 			ret.value = val;
 			return ret;
 		}
