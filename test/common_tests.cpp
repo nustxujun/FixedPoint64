@@ -43,7 +43,12 @@ void report(bool expr)
 auto test_func = [] {
 
 	std::default_random_engine e;
-	e.seed((unsigned int)&e);
+	union
+	{
+		void* p;
+		unsigned int seed;
+	}seed = {&e};
+	e.seed(seed.seed);
 
 	constexpr auto max = sqrt(std::numeric_limits<fixed>::max());
 	std::uniform_real_distribution<double> u(-double(max), double(max));

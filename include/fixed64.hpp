@@ -6,6 +6,13 @@
 #include <assert.h>
 #include <ios>
 
+#if __cplusplus >= 202002L // c++20, MSVC requires /Zc:__cplusplus
+#define FIXED_64_ENABLE_CPP20 1
+#include <bit> // for clz
+#else
+#define FIXED_64_ENABLE_CPP20 0
+#endif
+
 #ifndef FIXED_64_ENABLE_ROUNDING
 #define FIXED_64_ENABLE_ROUNDING 0
 #endif
@@ -271,7 +278,7 @@ namespace f64
 			while (remainder && bit_pos >= 0)
 			{
 				// Shift remainder as much as we can without overflowing
-				int shift = clz(remainder);
+				auto shift = clz(remainder);
 				if (shift > bit_pos) shift = bit_pos;
 				remainder <<= shift;
 				bit_pos -= shift;
@@ -394,7 +401,7 @@ namespace f64
 
 		static constexpr FIXED_64_FORCEINLINE long clz(internal_type value) noexcept
 		{
-#if __cplusplus >= 202002L // c++20, MSVC requires /Zc:__cplusplus
+#if FIXED_64_ENABLE_CPP20
 			return std::countl_zero(value);
 #elif defined(_MSC_VER) && !FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME
 			if (value == 0) return 64;
@@ -891,7 +898,7 @@ namespace std
 		using fixed = f64::fixed64<F>;
 		static constexpr fixed lowest() noexcept
 		{
-			return fixed::from_raw(std::numeric_limits<fixed::fixed_raw>::lowest());
+			return fixed::from_raw(std::numeric_limits<typename fixed::fixed_raw>::lowest());
 		};
 
 		static constexpr fixed min() noexcept
@@ -901,7 +908,7 @@ namespace std
 
 		static constexpr fixed max() noexcept
 		{
-			return fixed::from_raw(std::numeric_limits<fixed::fixed_raw>::max());
+			return fixed::from_raw(std::numeric_limits<typename fixed::fixed_raw>::max());
 		};
 
 		static constexpr fixed epsilon() noexcept
