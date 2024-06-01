@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <chrono>
 
 #define TEST_COUNT 1
 
@@ -43,12 +44,8 @@ void report(bool expr)
 auto test_func = [] {
 
 	std::default_random_engine e;
-	union
-	{
-		void* p;
-		unsigned int seed;
-	}seed = {&e};
-	e.seed(seed.seed);
+
+	e.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 
 	constexpr auto max = sqrt(std::numeric_limits<fixed>::max());
 	std::uniform_real_distribution<double> u(-double(max), double(max));
