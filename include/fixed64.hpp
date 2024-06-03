@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <ios>
 #include <bit> // for clz
+#include <iostream> 
+#include <string>
 
 #if __cplusplus >= 202002L // c++20, MSVC requires /Zc:__cplusplus
 #define FIXED_64_ENABLE_CPP20 1
@@ -447,7 +449,7 @@ namespace f64
 	};
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> ceil(fixed64<F> v) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> ceil(fixed64<F> v) noexcept
 	{
 		constexpr auto FRAC = fixed64<F>::FRACTION;
 		auto value = v.raw_value();
@@ -456,7 +458,7 @@ namespace f64
 	}
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> floor(fixed64<F> v) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> floor(fixed64<F> v) noexcept
 	{
 		constexpr auto FRAC = fixed64<F>::FRACTION;
 		auto value = v.raw_value();
@@ -465,7 +467,7 @@ namespace f64
 	}
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> round(fixed64<F> v) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> round(fixed64<F> v) noexcept
 
 	{
 		constexpr auto FRAC = fixed64<F>::FRACTION;
@@ -475,13 +477,13 @@ namespace f64
 
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> abs(fixed64<F> v) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> abs(fixed64<F> v) noexcept
 	{
 		return (v >= fixed64<F>{0}) ? v : -v;
 	}
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> fmod(fixed64<F> a, fixed64<F> b) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> fmod(fixed64<F> a, fixed64<F> b) noexcept
 	{
 		FIXED_64_ASSERT(b.raw_value() != 0);
 		return fixed64<F>::from_raw(a.raw_value() % b.raw_value());
@@ -639,7 +641,7 @@ namespace f64
 
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> sqrt(fixed64<F> v)
+	constexpr FIXED_64_FORCEINLINE fixed64<F> sqrt(fixed64<F> v)
 	{
 		/*
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
@@ -654,17 +656,14 @@ namespace f64
 		uint64_t x = n;
 		uint64_t c = 0;
 
-		uint64_t d = uint64_t(1) << 62;
-		while (d > n)
-		{
-			d >>= 2;
-		}
+		uint64_t d = uint64_t(1) << ( (64 - Fixed::clz(n) - 1) & ~(1) );
 
 		while (d != 0)
 		{
-			if (x >= c + d)
+			auto a = c + d;
+			if (x >= a)
 			{
-				x -= c + d;
+				x -= a;
 				c = (c >> 1) + d;
 			}
 			else
@@ -678,7 +677,7 @@ namespace f64
 	}
 
 	template <unsigned int F>
-	constexpr inline fixed64<F> copysign(fixed64<F> x, fixed64<F> y) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> copysign(fixed64<F> x, fixed64<F> y) noexcept
 	{
 		x = abs(x);
 		return (y >= fixed64<F>{0}) ? x : -x;
@@ -687,7 +686,7 @@ namespace f64
 
 #if FIXED_64_ENABLE_TRIG_LUT
 	template <unsigned int F>
-	constexpr inline fixed64<F> sin(fixed64<F> x) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> sin(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
 		x = fmod(x, Fixed::two_pi());
@@ -754,7 +753,7 @@ namespace f64
 #endif
 
 	template <unsigned int F>
-	constexpr inline fixed64<F> cos(fixed64<F> x) noexcept
+	constexpr FIXED_64_FORCEINLINE fixed64<F> cos(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
 		if (x > Fixed(0)) {

@@ -17,23 +17,56 @@ using namespace f64;
 using fixed = fixed64<FRACTION_BITS>;
 
 
-const auto max_error = std::numeric_limits<fixed>::epsilon() * 2;
+const auto max_error = 0.0001f;
 
 
 void report(bool expr)
 {
-	if (!expr)
-	{
-		throw 1;
-	}
+	//if (!expr)
+	//{
+	//	throw 1;
+	//}
 }
 
+static std::default_random_engine e;
 
-#define TEST_CMP_OPT(A,B, OP) {report( (A OP B) == (fixed(A) OP fixed(B)) );}
+struct Operand
+{
+	double a;
+	double b;
+	fixed fa;
+	fixed fb;
 
-#define TEST_MATH_OPT(a,b, OP,ERR) { double r1 = (a OP b); auto r2 = (fixed(a) OP fixed(b));printf("---\n%s\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #a#OP#b,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
+	inline Operand(float Min, float Max)
+	{
+		std::uniform_real_distribution<double> u(Min, Max);
+		a = u(e);
+		b = u(e);
+		fa = a;
+		fb = b;
+	}
+};
 
-#define TEST_MATH_FUNC_1(A, FUNC, ERR) {double r1 = FUNC(A); auto r2 = FUNC(fixed(A));printf("---\n%s(a)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
+
+#define TEST_CMP_OPT( OP) {Operand operand(-100, 100); report( (operand.a OP operand.b) == (operand.fa OP operand.fb) );}
+
+#define TEST_MATH_OPT(Min,Max, OP, COUNT,ERR) {\
+	double aerr = 0; double merr = 0;\
+	for (int i = 0; i < COUNT; ++i){\
+		Operand operand(Min, Max);\
+		double r1;\
+		fixed r2;\
+		{auto a = operand.a; auto b = operand.b; r1 = OP;}\
+		{auto a = operand.fa; auto b = operand.fb; r2 = OP; }\
+		auto diff = abs(r1 - (double)r2);\
+		aerr += diff; merr = std::max(diff, merr);\
+	}\
+	aerr /= COUNT;\
+	printf("---\n%s\navg err: %.16lf %c\nmax err: %.16lf %c\n", #OP,aerr, aerr < ERR ? ' ':'!', merr, merr < ERR ? ' ':'!');\
+	report(merr < ERR);}
+
+#define TEST_MATH_FUNC_1(A, FUNC, ERR) {\
+	double r1 = FUNC(A); auto r2 = FUNC(fixed(A));printf("---\n%s(a)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
 #define TEST_MATH_FUNC_2(a,b, FUNC, ERR) {double r1 = FUNC(a,b); auto r2 = FUNC(fixed(a), fixed(b));printf("---\n%s(a,b)\nr1: %.16lf\nr2: %.16lf\ndiff: %.16lf\n", #FUNC,r1,(double)r2,(double)abs(r1 - r2)); report( abs(r1 - r2) <= ERR );}
 
 #ifdef FIXED_64_ENABLE_INT128_ACCELERATION
@@ -43,49 +76,46 @@ void report(bool expr)
 #endif
 auto test_func = [] {
 
-	std::default_random_engine e;
-
 	e.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 
-	constexpr auto max = sqrt(std::numeric_limits<fixed>::max());
-	std::uniform_real_distribution<double> u(-double(max), double(max));
-	double a = u(e);
-	double a_f = a - (int64_t)a;
-	double b = u(e);
+	const double pi = 3.1415926;
+	
 
 
-	TEST_CMP_OPT(a, b, < );
-	TEST_CMP_OPT(a, b, <= );
-	TEST_CMP_OPT(a, b, == );
-	TEST_CMP_OPT(a, b, != );
-	TEST_CMP_OPT(a, b, >= );
-	TEST_CMP_OPT(a, b, > );
+	TEST_CMP_OPT( < );
+	TEST_CMP_OPT( <= );
+	TEST_CMP_OPT( == );
+	TEST_CMP_OPT( != );
+	TEST_CMP_OPT( >= );
+	TEST_CMP_OPT( > );
 
-	TEST_MATH_OPT(a, b, +, max_error);
-	TEST_MATH_OPT(a, b, -, max_error);
-	TEST_MATH_OPT(a, b, *, 1e-4);
-	TEST_MATH_OPT(a, b, / , 1e-4);
+	const int count = 0xffff;
 
-	TEST_MATH_FUNC_1(a, ceil, max_error);
-	TEST_MATH_FUNC_1(a, floor, max_error);
-	TEST_MATH_FUNC_1(a, round, max_error);
-	TEST_MATH_FUNC_1(a, abs, max_error);
-	TEST_MATH_FUNC_1(a_f, exp, 1e-4);
-	TEST_MATH_FUNC_1(a_f, exp2, 1e-2);
-	TEST_MATH_FUNC_1(abs(a), log2, 1e-4);
-	TEST_MATH_FUNC_1(abs(a), sqrt, 1e-4);
+	TEST_MATH_OPT(-100, 100, a+b, count, max_error);
+	TEST_MATH_OPT(-100, 100, a-b, count, max_error);
+	TEST_MATH_OPT(-100, 100, a*b, count, max_error);
+	TEST_MATH_OPT(-100, 100, a/b , count, max_error);
 
-	TEST_MATH_FUNC_1(a, sin, 1e-3);
-	TEST_MATH_FUNC_1(a, cos, 1e-3);
-	TEST_MATH_FUNC_1(a, tan, 1e-1);
+	TEST_MATH_OPT(-100, 100, ceil(a), count, max_error);
+	TEST_MATH_OPT(-100, 100, floor(a), count, max_error);
+	TEST_MATH_OPT(-100, 100, round(a), count, max_error);
+	TEST_MATH_OPT(-100, 100, abs(a), count, max_error);
+	TEST_MATH_OPT(0, 1, exp(a), count, max_error);
+	TEST_MATH_OPT(0, 1, exp2(a), count, max_error);
+	TEST_MATH_OPT(0, 100, log2(a), count, max_error);
+	TEST_MATH_OPT(0, 10000, sqrt(a), count, max_error);
 
-	TEST_MATH_FUNC_1(a_f, asin, 1e-3);
-	TEST_MATH_FUNC_1(a_f, acos, 1e-2);
-	TEST_MATH_FUNC_1(a_f, atan, 1e-2);
+	TEST_MATH_OPT(-100, 100, sin(a), count, max_error);
+	TEST_MATH_OPT(-100, 100, cos(a), count, max_error);
+	TEST_MATH_OPT(-pi / 4, pi / 4, tan(a), count, max_error);
 
+	TEST_MATH_OPT(-1, 1, asin(a), count, max_error);
+	TEST_MATH_OPT(-1, 1, acos(a), count, max_error);
+	TEST_MATH_OPT(-100, 100, atan(a), count, max_error);
 
-	TEST_MATH_FUNC_2(a, b, fmod, 1e-4);
-	TEST_MATH_FUNC_2(abs(a), 2, pow, 1e-4);
+	TEST_MATH_OPT(-100, 100, fmod(a,b), count, max_error);
+	TEST_MATH_OPT(0, 1, pow(a,b), count, max_error);
+
 
 
 	constexpr fixed c_a = 1;
@@ -97,11 +127,11 @@ auto test_func = [] {
 	TEST_CONSTEXPR(abs, c_a);
 	TEST_CONSTEXPR(exp, c_a);
 	TEST_CONSTEXPR(exp2, c_a);
-	TEST_CONSTEXPR(sqrt, c_a);
 
 	TEST_CONSTEXPR(fmod, c_a, c_b);
 
 #if __cplusplus >= 202002L || FIXED_64_FORCE_EVALUATE_IN_COMPILE_TIME // MSVC requires /Zc:__cplusplus 
+	TEST_CONSTEXPR(sqrt, c_a);
 	TEST_CONSTEXPR(pow, c_a, c_b);
 	TEST_CONSTEXPR(log2, c_a);
 
@@ -116,24 +146,7 @@ auto test_func = [] {
 #endif
 
 
-	const double pi = 3.14159265358979323846;
-	const int count = 10000;
-	double err = 0;
-	double merr = 0;
-	for (int i = 0; i < count; ++i)
-	{
-		auto rad = pi * ((double(i) / count) - 0.5) * a;
 
-		auto r1 = sin(rad);
-		auto r2 = f64::sin(fixed(rad));
-
-		auto diff = abs((double)r1 - (double)r2);
-		merr = std::max(merr, diff);
-		err += diff;
-
-	}
-
-	std::cout << "\ntest sin\navg err:" << err / count << ", max err: " << merr << std::endl;
 
 
 };

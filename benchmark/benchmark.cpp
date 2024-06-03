@@ -28,7 +28,7 @@ struct Counter
 	}
 };
 
-unsigned int seed = 0xdead;
+static std::default_random_engine e;
 
 using fixed = f64::fixed64<32>;
 struct Operand
@@ -40,8 +40,6 @@ struct Operand
 
 	inline Operand(float Min, float Max)
 	{
-		std::default_random_engine e;
-		e.seed(seed++);
 		std::uniform_real_distribution<double> u(Min, Max);
 		a = u(e) ;
 		b = u(e);
@@ -155,6 +153,7 @@ auto benchmark = [](){
 
 	printf("\n\n");
 
+	e.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 
 	const uint64_t count1 = 0xffff'ff;
 	const uint64_t count2 = 0xffff'f;
