@@ -9,6 +9,7 @@ set (HEADERS
 
 set (SOURCES
     "test/common_tests.cpp"
+    "test/main.cpp"
     "benchmark/benchmark.cpp"
 )
 
