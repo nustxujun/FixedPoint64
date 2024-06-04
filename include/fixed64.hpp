@@ -641,7 +641,7 @@ namespace f64
 
 
 	template<unsigned int F>
-	constexpr FIXED_64_FORCEINLINE fixed64<F> sqrt(fixed64<F> v)
+	constexpr inline fixed64<F> sqrt(fixed64<F> v)
 	{
 		/*
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
@@ -686,7 +686,7 @@ namespace f64
 
 #if FIXED_64_ENABLE_TRIG_LUT
 	template <unsigned int F>
-	constexpr FIXED_64_FORCEINLINE fixed64<F> sin(fixed64<F> x) noexcept
+	constexpr inline fixed64<F> sin(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
 		x = fmod(x, Fixed::two_pi());
@@ -753,7 +753,7 @@ namespace f64
 #endif
 
 	template <unsigned int F>
-	constexpr FIXED_64_FORCEINLINE fixed64<F> cos(fixed64<F> x) noexcept
+	constexpr inline fixed64<F> cos(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
 		if (x > Fixed(0)) {
