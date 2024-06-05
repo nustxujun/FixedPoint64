@@ -9,6 +9,7 @@
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <functional>
 
 using fp = float;
 
@@ -83,18 +84,25 @@ FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
 		EXPR1;\
 	}
 
+#pragma optimize("",off) // prevent statement reordering
+template<class T>
+void run_test(T& a, T& b, std::function<void(T&, T&)>&& f)
+{
+	f(a,b);
+}
+#pragma optimize("",on)
+
+
 #define RUN_TEST(EXPR1, EXPR2, COUNT, Min, Max) \
 {\
 	Operand operand(Min, Max);\
 	{\
-		auto& a = operand.a,& b = operand.b;\
 		Counter c(totals[0]);\
-		TEST_LOOP(EXPR1, EXPR2, COUNT)\
+		run_test<fp>(operand.a, operand.b, [COUNT](auto& a, auto& b){ TEST_LOOP(EXPR1, EXPR2, COUNT) });\
 	}\
 	{\
-		auto& a = operand.fa, &b = operand.fb;\
 		Counter c(totals[1]);\
-		TEST_LOOP(EXPR1, EXPR2, COUNT)\
+		run_test<fixed>(operand.fa, operand.fb,  [COUNT](auto& a, auto& b){ TEST_LOOP(EXPR1, EXPR2, COUNT) });\
 	}\
 	prevent_optimized_float += operand.a, prevent_optimized_fixed += operand.fa;\
 }
