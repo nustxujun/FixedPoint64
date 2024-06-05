@@ -40,9 +40,9 @@ struct Operand
 	fixed fa;
 	fixed fb;
 
-	inline Operand(float Min, float Max)
+	inline Operand(fp Min, fp Max)
 	{
-		std::uniform_real_distribution<fp> u(Min, Max);
+		std::uniform_real_distribution<double> u(Min, Max);
 		a = u(e) ;
 		b = u(e);
 		fa = a;
@@ -84,13 +84,27 @@ FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
 		EXPR1;\
 	}
 
-#pragma optimize("",off) // prevent statement reordering
+// prevent statment reordering
+#ifdef _MSC_VER
+#pragma optimize("",off) 
+#elif defined(__clang__)
+#pragma clang optimize off
+#else
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
 template<class T>
 void run_test(T& a, T& b, std::function<void(T&, T&)>&& f)
 {
 	f(a,b);
 }
-#pragma optimize("",on)
+#ifdef _MSC_VER
+#pragma optimize("",on) 
+#elif defined(__clang__)
+#pragma clang optimize on
+#else
+#pragma GCC pop_options
+#endif
 
 
 #define RUN_TEST(EXPR1, EXPR2, COUNT, Min, Max) \
@@ -114,21 +128,25 @@ struct TestGroup
 	std::string name;
 	uint64_t num_batch;
 	uint64_t count;
+	fp min;
+	fp max;
 	TestGroup(std::string n, uint64_t num, uint64_t c, fp min, fp max)
 	{
+		this->min = min;
+		this->max = max;
 		name = n;
 		num_batch = num;
 		count = c;
 		totals[0] = 0;
 		totals[1] = 0;
-		printf("%s [%f, %f]\n", name.c_str(), min, max);
 	}
 
 	~TestGroup()
 	{
-		printf("hard float: %lf ns, fixed point: %lf ns\n\n",
-			double(totals[0]) /count / num_batch
-			,double(totals[1]) / count / num_batch
+		printf("%16s[%6.1f, %6.1f]| %3.4lf ns | %3.4lf ns |\n",
+			name.c_str(),(float)min, (float)max,
+			double(totals[1]) /count / num_batch
+			,double(totals[0]) / count / num_batch
 			);
 	}
 };
@@ -166,6 +184,8 @@ auto benchmark = [](){
 
 	const uint64_t count1 = 0xffff'ff;
 	const uint64_t count2 = 0xffff'f;
+
+	printf("           arithmetic[ min, max]|fixed point| hard float|\n");
 
 	RUN_BASIC_TEST_GROUP("add/sub", +, -, 0xff, count1, -100, 100);
 

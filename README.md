@@ -46,29 +46,8 @@ fixed64 is designed to find a balance between percision and performance. It is s
 - support speed up the multiplication and division with integer
 
 ### Performance
-- forceinline 
-- no overflow 
-- no hardware int128
 
-Intel Core i9-12900K 3.2GHz
-
-|Arithmetic|Fixed64|Hardware Float|
-|-|:-:|:-:|
-|Addition/Subtraction|0.027 ns|0.433 ns|
-|Multiplication|2.621 ns|0.837 ns|
-|Division|1.316 ns|2.784 ns|
-
-Apple M1 pro
-
-|Arithmetic|Fixed64|Hardware Float|
-|-|:-:|:-:|
-|Addition/Subtraction|0.000001 ns*|0.953 ns|
-|Multiplication|4.057 ns|1.246 ns|
-|Division|1.102 ns|3.144 ns|
-
-    * result is calculated with random operand, can not be calculated in compile time. 
-
-see more in ``benchmark.cpp``
+see more in [benchmark](https://github.com/nustxujun/FixedPoint64/blob/main/benchmark/benchmark.md)
 ### Supported Switcher
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // apply rounding 
@@ -131,31 +110,9 @@ fixed64综合考虑了精度与性能的问题，使用了int64存储。个人�
 - 支持与整型的乘除法加速
 
 ### Performance
-- 开启强制内敛 
-- 无溢出检测
-- 无硬件int128支持
 
+具体参考[benchmark](https://github.com/nustxujun/FixedPoint64/blob/main/benchmark/benchmark.md)
 
-Intel Core i9-12900K 3.2GHz
-
-|算数操作|定点数|系统浮点数|
-|-|:-:|:-:|
-|加/减|0.027 ns|0.433 ns|
-|乘|2.621 ns|0.837 ns|
-|除|1.316 ns|2.784 ns|
-
-
-Apple M1 pro
-
-|算数操作|定点数|系统浮点数|
-|-|:-:|:-:|
-|加/减|0.000001 ns*|0.953 ns|
-|乘|4.057 ns|1.246 ns|
-|除|1.102 ns|3.144 ns|
-
-    * 计算数值是随机的，不可能是编译期计算出来的
-
-具体请参考``benchmark.cpp``
 ### 开关
 ```c++
 #define FIXED_64_ENABLE_ROUNDING // 使用四舍五入
