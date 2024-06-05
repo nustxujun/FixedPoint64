@@ -1,4 +1,0 @@
-ignore:
-  - "usr/"
-  - "test/"
-  - "**/CMakeFiles/**/*"

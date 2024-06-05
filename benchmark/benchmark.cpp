@@ -10,6 +10,7 @@
 #include <random>
 #include <chrono>
 
+using fp = float;
 
 struct Counter
 {
@@ -33,14 +34,14 @@ static std::default_random_engine e;
 using fixed = f64::fixed64<32>;
 struct Operand
 {
-	double a;
-	double b;
+	fp a;
+	fp b;
 	fixed fa;
 	fixed fb;
 
 	inline Operand(float Min, float Max)
 	{
-		std::uniform_real_distribution<double> u(Min, Max);
+		std::uniform_real_distribution<fp> u(Min, Max);
 		a = u(e) ;
 		b = u(e);
 		fa = a;
@@ -50,10 +51,10 @@ struct Operand
 };
 
 long long totals[2] = {0,0};
-double prevent_optimized_float = 0;
+fp prevent_optimized_float = 0;
 fixed prevent_optimized_fixed = 0;
 
-FIXED_64_FORCEINLINE void PreventOptimizedAway(double val)
+FIXED_64_FORCEINLINE void PreventOptimizedAway(fp val)
 {
 	prevent_optimized_float += val;
 }
@@ -105,7 +106,7 @@ struct TestGroup
 	std::string name;
 	uint64_t num_batch;
 	uint64_t count;
-	TestGroup(std::string n, uint64_t num, uint64_t c, double min, double max)
+	TestGroup(std::string n, uint64_t num, uint64_t c, fp min, fp max)
 	{
 		name = n;
 		num_batch = num;
