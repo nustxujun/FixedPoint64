@@ -85,26 +85,17 @@ FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
 	}
 
 // prevent statment reordering
-#ifdef _MSC_VER
-#pragma optimize("",off) 
-#elif defined(__clang__)
-#pragma clang optimize off
-#else
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-#endif
 template<class T>
+#ifdef _MSC_VER
+__declspec(noinline)
+#else
+__attribute__((noinline))
+#endif
 void run_test(T& a, T& b, std::function<void(T&, T&)>&& f)
 {
 	f(a,b);
 }
-#ifdef _MSC_VER
-#pragma optimize("",on) 
-#elif defined(__clang__)
-#pragma clang optimize on
-#else
-#pragma GCC pop_options
-#endif
+
 
 
 #define RUN_TEST(EXPR1, EXPR2, COUNT, Min, Max) \
@@ -118,7 +109,6 @@ void run_test(T& a, T& b, std::function<void(T&, T&)>&& f)
 		Counter c(totals[1]);\
 		run_test<fixed>(operand.fa, operand.fb,  [COUNT](auto& a, auto& b){ TEST_LOOP(EXPR1, EXPR2, COUNT) });\
 	}\
-	prevent_optimized_float += operand.a, prevent_optimized_fixed += operand.fa;\
 }
 
 
@@ -143,7 +133,7 @@ struct TestGroup
 
 	~TestGroup()
 	{
-		printf("%16s[%6.1f, %6.1f]| %3.4lf ns | %3.4lf ns |\n",
+		printf("%16s|[%6.1f, %6.1f]| %3.4lf ns | %3.4lf ns |\n",
 			name.c_str(),(float)min, (float)max,
 			double(totals[1]) /count / num_batch
 			,double(totals[0]) / count / num_batch
@@ -185,7 +175,7 @@ auto benchmark = [](){
 	const uint64_t count1 = 0xffff'ff;
 	const uint64_t count2 = 0xffff'f;
 
-	printf("           arithmetic[ min, max]|fixed point| hard float|\n");
+	printf("           arithmetic|[ min, max]|fixed point| hard float|\n");
 
 	RUN_BASIC_TEST_GROUP("add/sub", +, -, 0xff, count1, -100, 100);
 
