@@ -141,12 +141,12 @@ struct TestGroup
 	}
 };
 
-#define RUN_BASIC_TEST_GROUP(NAME, OP1,OP2, NUM,COUNT, Min, Max) \
+#define RUN_BASIC_TEST_GROUP(NAME, OP1, NUM,COUNT, Min, Max) \
 {\
 	TestGroup g(NAME, NUM, COUNT, Min, Max);\
 	for (uint64_t i = 0; i < NUM; ++i)\
 	{\
-		RUN_TEST(a OP1##= b, a OP2##= b,COUNT,Min,Max)\
+		RUN_TEST(a OP1##= b, b OP1##= a,COUNT,Min,Max)\
 	}\
 }
 
@@ -177,28 +177,11 @@ auto benchmark = [](){
 
 	printf("           arithmetic|[ min, max]|fixed point| hard float|\n");
 
-	RUN_BASIC_TEST_GROUP("add/sub", +, -, 0xff, count1, -100, 100);
+	RUN_BASIC_TEST_GROUP("add", +, 0xff, count1, -100, 100);
+	RUN_BASIC_TEST_GROUP("sub", -, 0xff, count1, -100, 100);
 
-#if FIXED_64_ENABLE_INT128_ACCELERATION
-	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 0, 0.5);
-	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 0.5, 1);
-	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 1, 2);
-	RUN_BASIC_TEST_GROUP("mul/div", *, /, 0xff, count2, 2, 100);
-#else
-	RUN_BASIC_TEST_GROUP("mul", *, * , 0xff, count2, -100,100);
-
-	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 0, 0.5);
-	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 0.5, 1);
-	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 1, 2);
-	RUN_BASIC_TEST_GROUP("mul", *, *, 0xff, count2, 2, 100);
-
-    RUN_BASIC_TEST_GROUP("div", /, / , 0xff, count2, -100, 100);
-
-	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0, 0.5);
-	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 0.5, 1);
-	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 1, 2);
-	RUN_BASIC_TEST_GROUP("div", / , / , 0xff, count2, 2, 100);
-#endif
+	RUN_BASIC_TEST_GROUP("mul", *, 0xff, count2, -100,100);
+    RUN_BASIC_TEST_GROUP("div", /, 0xff, count2, -100, 100);
 
 	const uint64_t count3 = 0xffff'f;
 	using namespace f64;
