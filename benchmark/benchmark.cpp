@@ -199,7 +199,6 @@ auto benchmark = [](){
 	RUN_METHOD_TEST_GROUP("asin", asin(a), 0xf, count3, -1, 1);
 	RUN_METHOD_TEST_GROUP("acos", acos(a), 0xf, count3, -1, 1);
 	RUN_METHOD_TEST_GROUP("atan", atan(a), 0xf, count3, 1, 100);
-	RUN_METHOD_TEST_GROUP("atan", atan(a), 0xf, count3, 1, 100);
 
 
 	return 0;
