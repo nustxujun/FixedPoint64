@@ -40,7 +40,7 @@ struct Operand
 	fixed fa;
 	fixed fb;
 
-	inline Operand(fp Min, fp Max)
+	inline void operator()(fp Min, fp Max)
 	{
 		std::uniform_real_distribution<double> u(Min, Max);
 		a = u(e) ;
@@ -50,7 +50,7 @@ struct Operand
 		//printf("a: %lf, b: %lf\n", a, b); 
 	}
 };
-
+static Operand operand;
 long long totals[2] = {0,0};
 fp prevent_optimized_float = 0;
 fixed prevent_optimized_fixed = 0;
@@ -100,7 +100,7 @@ void run_test(T& a, T& b, std::function<void(T&, T&)>&& f)
 
 #define RUN_TEST(EXPR1, EXPR2, COUNT, Min, Max) \
 {\
-	Operand operand(Min, Max);\
+	operand(Min, Max);\
 	{\
 		Counter c(totals[0]);\
 		run_test<fp>(operand.a, operand.b, [COUNT](auto& a, auto& b){ TEST_LOOP(EXPR1, EXPR2, COUNT) });\
