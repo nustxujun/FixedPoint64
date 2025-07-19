@@ -13,7 +13,8 @@ set (SOURCES
     "benchmark/benchmark.cpp"
 )
 
-
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_C_FLAGS_RELEASE "-O2")
 set (CMAKE_CXX_STANDARD 20)
 include_directories("include")
 add_executable(fixed64 ${SOURCES})
