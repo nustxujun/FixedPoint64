@@ -646,7 +646,7 @@ namespace f64
 		/*
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
 		*/
-		FIXED_64_ASSERT(("sqrt input should be non-negative", v >= 0));
+		FIXED_64_ASSERT(v >= 0 && "sqrt input should be non-negative");
 
 		using Fixed = fixed64<F>;
 
