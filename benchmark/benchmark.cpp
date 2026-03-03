@@ -13,28 +13,43 @@
 #include <string>
 #include <cstring>
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #include <intrin.h>
-#elif defined(__APPLE__)
+#elif defined(__x86_64__) || defined(__i386__)
+#include <cpuid.h>
+#endif
+
+#if defined(__APPLE__)
 #include <sys/sysctl.h>
 #elif defined(__linux__)
 #include <fstream>
 #endif
 
+static void cpuid_query(int leaf, int* regs)
+{
+#if defined(_MSC_VER)
+	__cpuid(regs, leaf);
+#elif defined(__x86_64__) || defined(__i386__)
+	__cpuid(leaf, regs[0], regs[1], regs[2], regs[3]);
+#else
+	regs[0] = regs[1] = regs[2] = regs[3] = 0;
+#endif
+}
+
 static std::string get_cpu_info()
 {
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	int cpu_info[4] = {};
+	int regs[4] = {};
 	char brand[49] = {};
-	__cpuid(cpu_info, 0x80000000);
-	unsigned max_ext = static_cast<unsigned>(cpu_info[0]);
+	cpuid_query(0x80000000, regs);
+	unsigned max_ext = static_cast<unsigned>(regs[0]);
 	if (max_ext >= 0x80000004) {
-		__cpuid(cpu_info, 0x80000002);
-		std::memcpy(brand, cpu_info, 16);
-		__cpuid(cpu_info, 0x80000003);
-		std::memcpy(brand + 16, cpu_info, 16);
-		__cpuid(cpu_info, 0x80000004);
-		std::memcpy(brand + 32, cpu_info, 16);
+		cpuid_query(0x80000002, regs);
+		std::memcpy(brand, regs, 16);
+		cpuid_query(0x80000003, regs);
+		std::memcpy(brand + 16, regs, 16);
+		cpuid_query(0x80000004, regs);
+		std::memcpy(brand + 32, regs, 16);
 		brand[48] = '\0';
 		std::string result(brand);
 		while (!result.empty() && result.front() == ' ') result.erase(result.begin());
