@@ -61,6 +61,7 @@
 #if defined(_MSC_VER)
 #include <intrin.h>
 #else
+#undef FIXED_64_ENABLE_INT128_ACCELERATION
 #define FIXED_64_ENABLE_INT128_ACCELERATION 0
 #endif
 #endif
@@ -87,7 +88,7 @@ namespace f64
 	{
 	public:
 		static constexpr unsigned int TotalBits = 64;
-		static_assert(FractionBits < TotalBits - 1, "fraction can be greater than 62");
+		static_assert(FractionBits < TotalBits - 1, "fraction can not be greater than 62");
 
 		using fixed_raw = int64_t;
 		using internal_type = uint64_t;
@@ -259,8 +260,10 @@ namespace f64
 			{
 				if (value > 0)
 					value = MAXIMUM;
-				else
+				else if (value < 0)
 					value = MINIMUM;
+				else
+					value = 0;
 				return *this;
 			}
 
@@ -307,7 +310,7 @@ namespace f64
 				bit_pos--;
 			}
 
-#if FIXED_64_ENABLE_ROUNDING == 0
+#if FIXED_64_ENABLE_ROUNDING
 			quotient++;
 #endif
 
@@ -429,15 +432,15 @@ namespace f64
 	public:
 
 		template<unsigned int F, typename std::enable_if<(FractionBits > F)>::type* = nullptr>
-			static constexpr FIXED_64_FORCEINLINE fixed64<F> from_fixed(fixed64<F> val)noexcept
+			static constexpr FIXED_64_FORCEINLINE fixed64<FractionBits> from_fixed(fixed64<F> val)noexcept
 		{
-			return fixed64<F>::from_raw(val.raw_value() * (fixed_raw(1) << (FractionBits - F)));
+			return fixed64<FractionBits>::from_raw(val.raw_value() * (fixed_raw(1) << (FractionBits - F)));
 		}
 
 		template<unsigned int F, typename std::enable_if<(FractionBits <= F)>::type* = nullptr>
-		static constexpr FIXED_64_FORCEINLINE fixed64<F> from_fixed(fixed64<F> val)noexcept
+		static constexpr FIXED_64_FORCEINLINE fixed64<FractionBits> from_fixed(fixed64<F> val)noexcept
 		{
-			return fixed64<F>::from_raw(val.raw_value() / (fixed_raw(1) << (F - FractionBits)));
+			return fixed64<FractionBits>::from_raw(val.raw_value() / (fixed_raw(1) << (F - FractionBits)));
 		}
 
 
@@ -595,7 +598,7 @@ namespace f64
 		constexpr auto fD = Fixed(2.4013971109076949e-1);
 		constexpr auto fE = Fixed(6.9315475247516736e-1);
 		constexpr auto fF = Fixed(9.9999989311082668e-1);
-		return Fixed(1 << x_int) * (((((fA * x + fB) * x + fC) * x + fD) * x + fE) * x + fF);
+		return Fixed(typename Fixed::internal_type(1) << x_int) * (((((fA * x + fB) * x + fC) * x + fD) * x + fE) * x + fF);
 	}
 
 	template < unsigned int F>
@@ -632,7 +635,7 @@ namespace f64
 		return log2(x) / log2(Fixed::e());
 	}
 
-	template <typename B, typename I, unsigned int F, bool R>
+	template <unsigned int F>
 	constexpr fixed64<F> log10(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
@@ -647,6 +650,11 @@ namespace f64
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
 		*/
 		FIXED_64_ASSERT(v >= 0 && "sqrt input should be non-negative");
+
+		if (v.raw_value() == 0)
+		{
+			return v;
+		}
 
 		using Fixed = fixed64<F>;
 
@@ -696,8 +704,7 @@ namespace f64
 			if (x > Fixed::pi())
 			{
 				sign = -1;
-				if (x > Fixed::half_pi())
-					x = abs(Fixed::pi() - x);
+				x = abs(Fixed::pi() - x);
 			}
 			else
 				sign = 1;
@@ -708,8 +715,7 @@ namespace f64
 			if (x < -Fixed::pi())
 			{
 				sign = 1;
-				if (x < -Fixed::half_pi())
-					x = -abs(Fixed::pi() + x);
+				x = -abs(Fixed::pi() + x);
 			}
 			else
 				sign = -1;
@@ -897,12 +903,12 @@ namespace std
 		using fixed = f64::fixed64<F>;
 		static constexpr fixed lowest() noexcept
 		{
-			return fixed::from_raw(std::numeric_limits<typename fixed::fixed_raw>::lowest());
+			return fixed::from_raw(fixed::MINIMUM);
 		};
 
 		static constexpr fixed min() noexcept
 		{
-			return lowest();
+			return fixed::from_raw(1);
 		}
 
 		static constexpr fixed max() noexcept
@@ -917,7 +923,7 @@ namespace std
 
 	};
 
-	template<unsigned long F>
+	template<unsigned int F>
 	inline string to_string(f64::fixed64<F> x) noexcept
 	{
 		return std::to_string((double)x);
