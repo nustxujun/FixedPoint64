@@ -152,9 +152,54 @@ auto test_func = [] {
 };
 
 
+void test_from_fixed() {
+	printf("==== test_from_fixed ====\n");
+
+	using f16 = fixed64<16>;
+	using f24 = fixed64<24>;
+	using f32 = fixed64<32>;
+	using f48 = fixed64<48>;
+
+	int pass = 0, fail = 0;
+
+	auto check = [&](const char* name, double got, double expect, double eps = 1e-4) {
+		bool ok = std::abs(got - expect) <= eps;
+		printf("  %s  %-45s  got=%-16.6f expect=%.6f\n", ok ? "PASS" : "FAIL", name, got, expect);
+		ok ? pass++ : fail++;
+	};
+
+	printf("\n[BUG1] return type is fixed64<F> not fixed64<Dst>, direct use gives wrong value\n");
+	check("f32::from_fixed(f16(3.5))  as f16",   (double)f32::from_fixed(f16(3.5)),   3.5);
+	check("f48::from_fixed(f16(10))   as f16",   (double)f48::from_fixed(f16(10.0)),  10.0);
+	check("f16::from_fixed(f48(5.75)) as f48",   (double)f16::from_fixed(f48(5.75)),  5.75);
+
+	printf("\n[BUG3] high->low negative truncation: div truncates toward zero, not -inf\n");
+	{
+		auto pos = f16(f32::from_raw(1));
+		auto neg = f16(f32::from_raw(-1));
+		check("f32(raw=-1)->f16 symmetric with +1",
+			(double)std::abs(neg.raw_value()), (double)std::abs(pos.raw_value()), 0);
+	}
+	{
+		int64_t r = -((int64_t(1) << 32) - 1);
+		auto pos = f16(f48::from_raw(-r));
+		auto neg = f16(f48::from_raw(r));
+		check("f48(raw=-(2^32-1))->f16 symmetric",
+			(double)std::abs(neg.raw_value()), (double)std::abs(pos.raw_value()), 0);
+	}
+	{
+		auto p = f16(f32(0.3));
+		auto n = f16(f32(-0.3));
+		check("f32(+/-0.3)->f16 symmetric", (double)n.raw_value(), (double)-p.raw_value(), 0);
+	}
+
+	printf("\n==== test_from_fixed: %d passed, %d failed ====\n", pass, fail);
+}
+
 auto test = [] {
 	printf("==== test begin ====\n");
 
+	test_from_fixed();
 
 	for (int i = 0; i < TEST_COUNT; ++i)
 	{

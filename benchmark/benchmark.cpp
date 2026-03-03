@@ -10,6 +10,105 @@
 #include <random>
 #include <chrono>
 #include <functional>
+#include <string>
+#include <cstring>
+
+#if defined(_WIN32)
+#include <intrin.h>
+#elif defined(__APPLE__)
+#include <sys/sysctl.h>
+#elif defined(__linux__)
+#include <fstream>
+#endif
+
+static std::string get_cpu_info()
+{
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+	int cpu_info[4] = {};
+	char brand[49] = {};
+	__cpuid(cpu_info, 0x80000000);
+	unsigned max_ext = static_cast<unsigned>(cpu_info[0]);
+	if (max_ext >= 0x80000004) {
+		__cpuid(cpu_info, 0x80000002);
+		std::memcpy(brand, cpu_info, 16);
+		__cpuid(cpu_info, 0x80000003);
+		std::memcpy(brand + 16, cpu_info, 16);
+		__cpuid(cpu_info, 0x80000004);
+		std::memcpy(brand + 32, cpu_info, 16);
+		brand[48] = '\0';
+		std::string result(brand);
+		while (!result.empty() && result.front() == ' ') result.erase(result.begin());
+		return result;
+	}
+	return "Unknown x86 CPU";
+#elif defined(__APPLE__)
+	char buf[256] = {};
+	size_t len = sizeof(buf);
+	if (sysctlbyname("machdep.cpu.brand_string", buf, &len, nullptr, 0) == 0)
+		return buf;
+	return "Unknown Apple CPU";
+#elif defined(__linux__)
+	std::ifstream cpuinfo("/proc/cpuinfo");
+	std::string line;
+	while (std::getline(cpuinfo, line)) {
+		if (line.find("model name") != std::string::npos ||
+			line.find("Model") != std::string::npos) {
+			auto pos = line.find(':');
+			if (pos != std::string::npos) {
+				std::string val = line.substr(pos + 1);
+				while (!val.empty() && val.front() == ' ') val.erase(val.begin());
+				return val;
+			}
+		}
+	}
+	return "Unknown Linux CPU";
+#else
+	return "Unknown CPU";
+#endif
+}
+
+static const char* get_os_name()
+{
+#if defined(_WIN32)
+	return "Windows";
+#elif defined(__APPLE__)
+	return "macOS";
+#elif defined(__linux__)
+	return "Linux";
+#else
+	return "Unknown";
+#endif
+}
+
+static std::string get_compiler_info()
+{
+#if defined(_MSC_VER)
+	return "MSVC " + std::to_string(_MSC_VER);
+#elif defined(__clang__)
+	return "Clang " + std::to_string(__clang_major__) + "." +
+		std::to_string(__clang_minor__) + "." + std::to_string(__clang_patchlevel__);
+#elif defined(__GNUC__)
+	return "GCC " + std::to_string(__GNUC__) + "." +
+		std::to_string(__GNUC_MINOR__) + "." + std::to_string(__GNUC_PATCHLEVEL__);
+#else
+	return "Unknown Compiler";
+#endif
+}
+
+static const char* get_arch()
+{
+#if defined(__x86_64__) || defined(_M_X64)
+	return "x86_64";
+#elif defined(__i386__) || defined(_M_IX86)
+	return "x86";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+	return "ARM64";
+#elif defined(__arm__) || defined(_M_ARM)
+	return "ARM";
+#else
+	return "Unknown";
+#endif
+}
 
 using fp = float;
 
@@ -161,9 +260,13 @@ struct TestGroup
 
 
 
-auto benchmark = [](){
+int main()
+{
 	printf("==== benchmark begin ====\n");
-
+	printf("CPU: %s\n", get_cpu_info().c_str());
+	printf("Arch: %s\n", get_arch());
+	printf("OS: %s\n", get_os_name());
+	printf("Compiler: %s\n", get_compiler_info().c_str());
 	printf("enable overflow: %d\n", FIXED_64_ENABLE_OVERFLOW);
 	printf("enable int128: %d\n", FIXED_64_ENABLE_INT128_ACCELERATION);
 	printf("enable forceinline: %d\n", FIXED_64_ENABLE_FORCEINLINE);
@@ -200,6 +303,5 @@ auto benchmark = [](){
 	RUN_METHOD_TEST_GROUP("acos", acos(a), 0xf, count3, -1, 1);
 	RUN_METHOD_TEST_GROUP("atan", atan(a), 0xf, count3, -100, 100);
 
-
 	return 0;
-}();
+}
