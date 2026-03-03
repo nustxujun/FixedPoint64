@@ -52,21 +52,19 @@ struct Operand
 };
 static Operand operand;
 long long totals[2] = {0,0};
-fp prevent_optimized_float = 0;
-fixed prevent_optimized_fixed = 0;
 
-FIXED_64_FORCEINLINE void PreventOptimizedAway(fp val)
+template<class T>
+FIXED_64_FORCEINLINE void DoNotOptimize(T& value)
 {
-	prevent_optimized_float += val;
-}
-
-FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
-{
-	prevent_optimized_fixed += val;
+#if defined(__GNUC__) || defined(__clang__)
+	asm volatile("" : "+r,m"(value) : : "memory");
+#else
+	reinterpret_cast<volatile char&>(value) = reinterpret_cast<volatile char&>(value);
+#endif
 }
 
 #define TEST_LOOP(EXPR1, EXPR2, COUNT) \
-	for (uint64_t i = 0; i < COUNT; i += 0xf){\
+	for (uint64_t i = 0; i < COUNT; i += 0x10){\
 		EXPR1;\
 		EXPR2;\
 		EXPR1;\
@@ -82,6 +80,7 @@ FIXED_64_FORCEINLINE void PreventOptimizedAway(fixed val)
 		EXPR1;\
 		EXPR2;\
 		EXPR1;\
+		EXPR2;\
 	}
 
 // prevent statment reordering
@@ -155,7 +154,8 @@ struct TestGroup
 	TestGroup g(NAME, NUM, COUNT, Min, Max);\
 	for (uint64_t i = 0; i < NUM; ++i)\
 	{\
-		RUN_TEST(PreventOptimizedAway(METHOD), PreventOptimizedAway(METHOD),COUNT,Min,Max)\
+		RUN_TEST({auto _r = (METHOD); DoNotOptimize(_r); DoNotOptimize(a);}, \
+		         {auto _r = (METHOD); DoNotOptimize(_r); DoNotOptimize(a);},COUNT,Min,Max)\
 	}\
 }
 
@@ -180,8 +180,8 @@ auto benchmark = [](){
 	RUN_BASIC_TEST_GROUP("add", +, 0xff, count1, -100, 100);
 	RUN_BASIC_TEST_GROUP("sub", -, 0xff, count1, -100, 100);
 
-	RUN_BASIC_TEST_GROUP("mul", *, 0xff, count2, -100,100);
-    RUN_BASIC_TEST_GROUP("div", /, 0xff, count2, -100, 100);
+	RUN_BASIC_TEST_GROUP("mul", *, 0xff, count2, -10, 10);
+	RUN_BASIC_TEST_GROUP("div", /, 0xff, count2, 1, 100);
 
 	const uint64_t count3 = 0xffff'f;
 	using namespace f64;
@@ -195,10 +195,10 @@ auto benchmark = [](){
 
 	RUN_METHOD_TEST_GROUP("sin", sin(a), 0xf, count3, -10, 10);
 	RUN_METHOD_TEST_GROUP("cos", cos(a), 0xf, count3, -10, 10);
-	RUN_METHOD_TEST_GROUP("tan", tan(a), 0xf, count3, -10, 10);
+	RUN_METHOD_TEST_GROUP("tan", tan(a), 0xf, count3, -1, 1);
 	RUN_METHOD_TEST_GROUP("asin", asin(a), 0xf, count3, -1, 1);
 	RUN_METHOD_TEST_GROUP("acos", acos(a), 0xf, count3, -1, 1);
-	RUN_METHOD_TEST_GROUP("atan", atan(a), 0xf, count3, 1, 100);
+	RUN_METHOD_TEST_GROUP("atan", atan(a), 0xf, count3, -100, 100);
 
 
 	return 0;
