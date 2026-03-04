@@ -629,7 +629,11 @@ namespace f64
 	constexpr fixed64<F> log(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
+#if FIXED_64_ENABLE_CPP20
 		constexpr Fixed log2_e = log2(Fixed::e());
+#else
+		static const Fixed log2_e = log2(Fixed::e());
+#endif
 		return log2(x) / log2_e;
 	}
 
@@ -637,7 +641,11 @@ namespace f64
 	constexpr fixed64<F> log10(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
+#if FIXED_64_ENABLE_CPP20
 		constexpr Fixed log2_10 = log2(Fixed(10));
+#else
+		static const Fixed log2_10 = log2(Fixed(10));
+#endif
 		return log2(x) / log2_10;
 	}
 
