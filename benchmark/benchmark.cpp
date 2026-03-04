@@ -310,6 +310,9 @@ int main()
 	RUN_METHOD_TEST_GROUP("exp", exp(a), 0xf, count3, 0, 1);
 	RUN_METHOD_TEST_GROUP("exp2", exp2(a), 0xf, count3, 0, 1);
 	RUN_METHOD_TEST_GROUP("sqrt", sqrt(a), 0xf, count3, 0, 100);
+	RUN_METHOD_TEST_GROUP("log2", log2(a), 0xf, count3, 1, 100);
+	RUN_METHOD_TEST_GROUP("log", log(a), 0xf, count3, 1, 100);
+	RUN_METHOD_TEST_GROUP("log10", log10(a), 0xf, count3, 1, 100);
 
 	RUN_METHOD_TEST_GROUP("sin", sin(a), 0xf, count3, -10, 10);
 	RUN_METHOD_TEST_GROUP("cos", cos(a), 0xf, count3, -10, 10);

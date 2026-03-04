@@ -20,6 +20,7 @@ include_directories("include")
 add_executable(fixed64_test
     "test/main.cpp"
     "test/common_tests.cpp"
+    "test/overflow_div_test.cpp"
 )
 
 enable_testing()

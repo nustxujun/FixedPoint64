@@ -102,10 +102,7 @@ namespace f64
 		constexpr FIXED_64_FORCEINLINE fixed64() noexcept = default;
 
 
-		constexpr FIXED_64_FORCEINLINE fixed64(const fixed64& val) noexcept
-			:value(val.value)
-		{
-		}
+		constexpr FIXED_64_FORCEINLINE fixed64(const fixed64& val) noexcept = default;
 
 		template<unsigned int F>
 		constexpr FIXED_64_FORCEINLINE fixed64(fixed64<F> val) noexcept
@@ -293,7 +290,7 @@ namespace f64
 				quotient += div << bit_pos;
 
 #if FIXED_64_ENABLE_OVERFLOW
-				if (div & ~((~fixed_raw(0)) >> bit_pos))
+				if (div & ~((~internal_type(0)) >> bit_pos))
 				{
 					FIXED_64_OVERFLOW_ALERT();
 
@@ -342,7 +339,7 @@ namespace f64
 
 #if !FIXED_64_ENABLE_OVERFLOW 
 		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-		constexpr FIXED_64_FORCEINLINE fixed64& operator*= (T val)
+		constexpr FIXED_64_FORCEINLINE fixed64& operator*= (T val) noexcept
 		{
 			value *= val;
 			return *this;
@@ -361,7 +358,7 @@ namespace f64
 		}
 
 		template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-		constexpr FIXED_64_FORCEINLINE fixed64& operator/= (T val)
+		constexpr FIXED_64_FORCEINLINE fixed64& operator/= (T val) noexcept
 		{
 			value /= val;
 			return *this;
@@ -632,19 +629,21 @@ namespace f64
 	constexpr fixed64<F> log(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
-		return log2(x) / log2(Fixed::e());
+		constexpr Fixed log2_e = log2(Fixed::e());
+		return log2(x) / log2_e;
 	}
 
 	template <unsigned int F>
 	constexpr fixed64<F> log10(fixed64<F> x) noexcept
 	{
 		using Fixed = fixed64<F>;
-		return log2(x) / log2(Fixed(10));
+		constexpr Fixed log2_10 = log2(Fixed(10));
+		return log2(x) / log2_10;
 	}
 
 
 	template<unsigned int F>
-	constexpr inline fixed64<F> sqrt(fixed64<F> v)
+	constexpr inline fixed64<F> sqrt(fixed64<F> v) noexcept
 	{
 		/*
 			from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
@@ -784,7 +783,7 @@ namespace f64
 	namespace internal
 	{
 		template <unsigned int F>
-		constexpr inline fixed64<F> atan_sanitized(fixed64<F> x)
+		constexpr inline fixed64<F> atan_sanitized(fixed64<F> x) noexcept
 		{
 			using Fixed = fixed64<F>;
 			FIXED_64_ASSERT(x >= Fixed(0) && x <= Fixed(1));
